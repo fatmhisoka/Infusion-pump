@@ -30,7 +30,8 @@ This project implements a water flow meter with an integrated pump control mecha
 4. Adjustments to the pump operation can be made by modifying the Arduino sketch.
 
 ## Circuit Diagram
-![Circuit Diagram](circuit_diagram.png)
+![Pump Diagram](pump.png)
+![Flow sensor Diagram](sensor.png)
 
 ## Dependencies
 - Arduino IDE
