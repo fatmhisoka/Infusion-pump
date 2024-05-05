@@ -1,64 +1,96 @@
 #include <SoftwareSerial.h>
 #include <LiquidCrystal.h>
 
-// Define pin numbers for LCD
-const int rs = 12, en = 11, d4 = 7, d5 = 6, d6 = 5, d7 = 4;
+const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
-// Define pin number for relay
-const int IN2 = 8;
 
-// Variables for flow sensor
-volatile int flow_frequency; // Measures flow sensor pulses
-unsigned int l_hour; // Calculated litres/hour
-const unsigned char flowsensor = 9; // Sensor Input
-unsigned long currentTime;
-unsigned long cloopTime;
+//Variable of relay
+int IN2=8;
 
-// Interrupt function for flow sensor
-void flow() {
-   flow_frequency++;
-}
+#define LED_PIN 13
+int buzzer = 10;
+
+
+const int trigPin = 7;
+const int echoPin = 6;
+
+float duration, distance,  actual_d, volume;
+
+unsigned char flowsensor = 9; // Sensor Input
+
+
 
 void setup() {
+  // put your setup code here, to run once:
   Serial.begin(9600);
-  // Initialize LCD
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+  pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(buzzer,OUTPUT);
+
   lcd.begin(16, 2);
   lcd.clear();
-  lcd.setCursor(0, 0);
+  lcd.setCursor(0,0);
   lcd.print("Water Flow Meter");
-  lcd.setCursor(0, 1);
-  lcd.print("****************");
-  
-  // Initialize relay pin
-  pinMode(IN2, OUTPUT);
-  
-  // Initialize flow sensor
-  pinMode(flowsensor, INPUT);
-  digitalWrite(flowsensor, HIGH); // Optional Internal Pull-Up
-  attachInterrupt(0, flow, RISING); // Setup Interrupt
-  sei(); // Enable interrupts
-  currentTime = millis();
-  cloopTime = currentTime;
-}
+  delay(2000);
 
+  pinMode(IN2,OUTPUT);      // Relay for pump
+ 
+  pinMode(flowsensor, INPUT);
+
+}
 void loop() {
-  // Calculate flow rate
-  currentTime = millis();
-  l_hour = (flow_frequency * 60 / 7.5); // (Pulse frequency x 60 min) / 7.5Q = flowrate in L/hour
-  flow_frequency = 0; // Reset Counter
-  // Print flow rate to serial monitor
-  Serial.print(l_hour, DEC);
-  Serial.println(" L/hour");
-  // Display flow rate on LCD
-  lcd.print(l_hour, DEC);
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  duration = pulseIn(echoPin, HIGH);
+  distance = (duration*.0343)/2;
+  actual_d = 14 - distance ;
+  volume = (22/7) * 16 * actual_d ;
+  Serial.print("Distance: ");
+  Serial.println(distance);
+  Serial.print("volume: ");
+  Serial.println(volume);
+
+
+
+  uint32_t pulse = pulseIn(flowsensor,HIGH);
+
+ 
+  //flowmeter 
+
+  float Hz = 1/(2*pulse*pow(10,-6));
+  float flow = 0.0137*(float)Hz + 8*pow(10,-15);
+  lcd.setCursor(0,0); 
+  lcd.print(flow); // Print litres/hour
   lcd.println(" L/hour"); 
-  
-  // Turn on the pump
+
+  Serial.print(flow); // Print litres/hour
+  Serial.println(" L/hour");
+  delay(200);
+
+      
+   
+  if (distance > 7){
+    digitalWrite(LED_BUILTIN, HIGH);  // turn the LED on (HIGH is the voltage level)
+  }
   digitalWrite(IN2, HIGH);
-  delay(5000); // Run the pump for 5 seconds
+  if (distance > 9){
+    tone(buzzer,13500);
+
+    digitalWrite(IN2, LOW);
+    lcd.setCursor(0,1);
+    lcd.print("Volume"); // Print litres/hour
+    lcd.println(volume); 
+
+
+    delay(2000);
+  }
+
   
-  // Turn off the pump
-  digitalWrite(IN2, LOW);
-  delay(10000); // Wait for 10 seconds before starting the next cycle
+   
 }
