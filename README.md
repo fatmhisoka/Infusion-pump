@@ -1,4 +1,4 @@
-# Water Flow Meter with Pump Control Readme
+# Infusion pump
 
 ## Description
 This project implements a water flow meter with an integrated pump control mechanism. It measures the flow rate of water and controls a pump accordingly. The system utilizes an Arduino board, a flow sensor, and a relay module to achieve this functionality.
